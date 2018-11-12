@@ -101,10 +101,10 @@ module Fluent
 						connect
 					end
 					tries ||= 3
-		log.warn("query: #{oQuery.to_json}")
+#		log.warn("query: #{oQuery.to_json}")
 					@sock.puts oQuery.to_json
 					respline = @sock.gets
-		log.warn("response: #{respline}")
+#		log.warn("response: #{respline}")
 					
 					oResp = JSON.parse(respline)					
 					if oResp["status"] == "OK"
