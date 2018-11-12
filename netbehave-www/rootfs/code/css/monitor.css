@@ -1,0 +1,38 @@
+th {
+	text-align: center;
+}
+th.hl {
+	text-align: center;
+	background-color: #04356c;
+	color: #ffffff;
+}
+th {
+	text-align: center;
+	background-color: #274f7d;
+	background-color: #006d4c;
+	background-color: #0d56a6;
+	color: #ffffff;
+}
+td.hl1  {
+	text-align: center;
+	background-color: #689ad3;
+	background-color: #a68100;
+	color: #000000;
+}
+td.hl0 {
+	text-align: center;
+	color: #ffffff;
+	color: #000000;
+	background-color: #689ad3;
+}
+td.hn1  {
+	text-align: center;
+	background-color: #5fd4b1;
+	background-color: #bf9f30;
+	background-color: #ffd440;
+	color: #000000;
+}
+td.hn0  {
+	text-align: center;
+	color: #000000;
+}

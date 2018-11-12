@@ -1,0 +1,222 @@
+#
+# Copyright 2018: Yves B. Desharnais
+#
+# This file is part of NetBehave available at NetBehave.org.
+# 
+# NetBehave is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# NetBehave is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with NetBehave.  If not, see <https://www.gnu.org/licenses/>.
+# 
+# netbehave docker-compose.yml file
+# version 2 is required for docker on raspberry pi - leaving to 3 by default
+version: '3' 
+
+services:
+    netbehave-docker-base:
+        image: netbehave-docker-base
+        build: ./netbehave-docker-base
+#            args:
+#                ARCH: amd64
+        volumes:
+         - logs:/var/log
+
+    netbehave-docker-fluentd:
+        image: netbehave-docker-fluentd
+        build: ./netbehave-docker-fluentd
+        volumes:
+         - logs:/var/log
+
+    netbehave-alerting:
+        image: netbehave-alerting
+        build: ./netbehave-alerting
+        environment:
+        - ENV SMTP_USER=account@example.com
+        - ENV SMTP_PASSWORD=PASSWORD 
+        - ENV SMTP_RECIPIENT=account@example.com
+        - ENV SMTP_SERVER=smtp.example.com
+        - ENV SMTP_PORT=2525 # Is 25 blocked by default?
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+        
+    netbehave-collector-nfipfix:
+        image: netbehave-collector-nfipfix
+        build: ./netbehave-collector-nfipfix
+        expose:
+        - "2055/udp"
+        ports:
+        - "2055:2055/udp"
+        environment:
+        - ENV LOCAL_NETWORKS="home=192.168.0.;docker=172.17.;NAT=1.1.1.1"
+        networks:
+            dnsinter:
+        depends_on:
+        - netbehave-core
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+
+    netbehave-dnsserver:
+        image: netbehave-dnsserver
+        build: ./netbehave-dnsserver
+        cap_add:
+        - NET_ADMIN
+        expose:
+        - "53/udp"
+        - "53/tcp"
+        ports:
+        - "53:53/udp"
+        - "53:53/tcp"
+        volumes:
+        - logs:/var/log
+        links:
+        - "netbehave-dnsserver-tls:netbehave-dnsserver-tls"
+        depends_on:
+        - netbehave-dnsserver-tls
+        environment:
+        - LOGFILE=/var/log/dnsmasq/dnsmasq.log
+        - DNSFORWARD=netbehave-dnsserver-tls
+#        - S6_LOGGING=0
+        networks:
+            default:
+            dnsinter:
+      
+    netbehave-dnsserver-tls:
+        image: netbehave-dnsserver-tls
+        build: ./netbehave-dnsserver-tls
+        depends_on:
+        - netbehave-docker-base
+        volumes:
+         - logs:/var/log
+        ports:
+         - "8053:8053/tcp"
+         - "8053:8053/udp"
+        networks:
+            dnsinter:
+                aliases:
+                - dnsfwd
+
+    netbehave-dnscache:
+        image: netbehave-dnscache
+        build: ./netbehave-dnscache
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+        environment:
+        - DNSCACHEDATADIR=/opt/netbehave/dnscache
+        depends_on:
+        - netbehave-docker-base
+        expose:
+        - "10001/tcp"
+        - "10002/tcp"
+        - "10003/tcp"
+        ports:
+        - "10001:10001/tcp"
+        - "10002:10002/tcp" # temp - to test from remote server
+        networks:
+            dnsinter:
+
+    netbehave-ipam:
+        image: netbehave-ipam
+        build: ./netbehave-ipam
+        depends_on:
+        - netbehave-docker-base
+        expose:
+        - "11001/tcp"
+        - "11002/tcp"
+        - "11003/tcp"
+        ports:
+        - "11001:11001/tcp"
+        - "11002:11002/tcp" # temp - to test from remote server
+        networks:
+            dnsinter:
+        volumes:
+        - data:/opt/netbehave
+        - logs:/var/log
+        environment:
+        - IPAMDATADIR=/opt/netbehave/ipam
+
+    netbehave-dnslogparser:
+        image: netbehave-dnslogparser
+        build: ./netbehave-dnslogparser
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+        depends_on:
+        - netbehave-dnsserver
+        - netbehave-dnscache
+        - netbehave-docker-fluentd
+        networks:
+            dnsinter:
+
+
+
+    netbehave-core:
+        image: netbehave-core
+        build: ./netbehave-core
+        expose:
+#        - "24223/tcp"
+        - "24224/tcp"
+        ports:
+#        - "24223:24223/tcp"
+        - "24224:24224/tcp"
+        depends_on:
+        - netbehave-www
+        - netbehave-dnscache
+        networks:
+            dnsinter:
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+    netbehave-www:
+        image: netbehave-www
+        build: ./netbehave-www
+        expose:
+        - "80/tcp"
+#        - "5000-5009/tcp"
+#        - "6000-6009/tcp"
+        ports:
+        - "8080:80/tcp"
+        - "5000:5000/tcp"
+        - "5002-5009:5002-5009/tcp"
+        - "6002-6009:6002-6009/tcp"
+        depends_on:
+        - netbehave-docker-base
+        networks:
+            dnsinter:
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+
+
+
+networks:
+    dnsinter:
+
+
+volumes:
+    logs:
+    data:
+    
+
+# Command line description for independent image dev/testing
+# docker-compose build
+# docker-compose up -d
+# docker-compose up
+# sudo docker run -v pisec_dns_log:/var/log/dnsmasq -v pisec_dnsmasq_data:/data/dnsmasq -v pisec_nf_logs:/data/nf -v pisec_ipam_data:/data/ipam  -it alpine
+# cd /data/nf/dnsmasq/
+# tail -f fdlog-
+# tail -f debug/flows/buffer.b575b8be2d5871774d7e64bc146e1638f.log
