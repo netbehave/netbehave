@@ -10,8 +10,12 @@ Steps
 1. Get a copy of the code (download zip/unzip or git clone)
 2. Edit docker-compose.yml file to edit the ENV variable values for netbehave-alerting and netbehave-core
 3. Go to the folder and run: docker-compose build [sudo may be required]
-3. Go to the folder and run: docker-compose up -d [sudo may be required]
+4. Go to the folder and run: docker-compose up -d [sudo may be required]
 # 
+# www
+The www server runs at port 8080 by default.
+It currently uses basic authentication with user 'nbadmin' and password 'netbehave-www'
+#
 # Potential issues
 # 
 Some linux systems may already have a DNS application running which should be disabled (or ports changed).
