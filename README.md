@@ -8,7 +8,7 @@ More information will be posted on netbehave.org in the coming days.
 # Gettting started
 Steps
 1. Get a copy of the code (download zip/unzip or git clone)
-2. Edit docker-compose.yml file to edit the ENV variable values for netbehave-alerting abd netbehave-core
+2. Edit docker-compose.yml file to edit the ENV variable values for netbehave-alerting and netbehave-core
 3. Go to the folder and run: docker-compose build [sudo may be required]
 3. Go to the folder and run: docker-compose up -d [sudo may be required]
 # 
