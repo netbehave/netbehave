@@ -68,6 +68,9 @@ module Fluent
 				        when "protocol";	  		flow["protocol"] = value 
 				        when "in_bytes","out_bytes";flow["bytes"] = value
 				        when "in_pkts","out_pkts";	flow["packets"] = value
+				        when "tcp_flags";			flow["tcp_flags"] = value
+				        when "first_switched";		flow["first_switched"] = value
+				        when "last_switched";		flow["last_switched"] = value
 				        # flow["ip_version"] = 4;
 						# IP
 				        when "sourceIPv4Address"; 	flow["src"]["ip"] = value
