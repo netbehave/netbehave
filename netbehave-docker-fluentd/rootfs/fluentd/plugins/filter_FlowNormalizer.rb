@@ -53,6 +53,7 @@ module Fluent
 					flow = {}
 					flow["src"] = {}
 					flow["dst"] = {}
+					flow["time"] = time
 					other = {}
 
 					record.each_pair { |key, value|
