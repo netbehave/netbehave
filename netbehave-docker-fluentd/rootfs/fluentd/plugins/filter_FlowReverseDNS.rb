@@ -169,3 +169,7 @@ log.error "FlowReverseDNSFilter", e
   end
 end
 
+=begin
+{"action":"reverseDNS", "ip":"17.178.96.59"}
+{"action":"DNS", "domain":"apple.com"}
+=end

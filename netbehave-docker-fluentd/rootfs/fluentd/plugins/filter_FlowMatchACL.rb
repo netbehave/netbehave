@@ -36,11 +36,13 @@ module Fluent
 
 		def configure(conf)
 			super
-			if @aclFile.nil?
+			if @aclFile.nil? || !File.file?(@aclFile)
 				@rules = CSV_ACL.new( File.expand_path('../acl.csv', __FILE__) )
 			else
 				@rules = CSV_ACL.new(@aclFile)
 			end
+			log.info "FlowMatchACLFilter #{@rules.rules.length} rules loaded"
+
 #			log.debug "FlowDnsModuleFilter "
 			# @dbPath = dbfile
 		end
@@ -60,16 +62,14 @@ module Fluent
 				if ruleName.nil?				
 			        record["flow"][@aclField] = "NOMATCH"
 				else
+			log.info "FlowMatchACLFilter:filter found rule [#{ruleName}]"
 			        record["flow"][@aclField] = ruleName
 				end
 			 end
 
 			record
 		end
-
-                
-        private
-
+				
 		end # class
     end #  module Plugin
 end # module Fluent
