@@ -32,7 +32,7 @@ class AclField
 	@@operators = ["!=", "=", "<", ">"]
 
 	def initialize(toParse) #field[op]value
-#puts "AclField:[#{toParse}]"
+# puts "AclField:[#{toParse}]"
 		
 		@operator = nil
 		cols = [toParse] # toParse.split("=")
@@ -40,14 +40,21 @@ class AclField
 				@@operators.each{ | op | 
 						cols = toParse.split(op)
 						@operator = op
+						if cols.length > 1
+#							@value = cols[0]
+#							@value = cols[2]
+						end
 						break if cols.length > 1
 				}
+#			puts "AclField:Operator found in list [#{@operator}] #{cols}"
 		else
-#			puts "Operator not found in list [#{@@operators.join(',')}] for [#{toParse}]"
+			puts "AclField:Operator not found in list [#{@@operators.join(',')}] for [#{toParse}]"
 		end
 
 		if !validateField(cols[0])
 			# throw
+			puts "AclField:validateField error"
+
 		end
 		parseValue(cols[1])
 	end # def initialize
@@ -89,9 +96,11 @@ class AclField
 			return false
 		end
 
+		value = value.to_s
+
 		case @operator
 		when "="
-#puts "#{value} == #{@value}"
+# puts "AclField #{value} == #{@value}"
 			if value == @value
 				bResult = true
 			end
@@ -170,7 +179,7 @@ class AclField
 			@operator = "IPinRange"
 			
 		else
-			@value = v
+			@value = v.to_s
 		end
 	end
 
