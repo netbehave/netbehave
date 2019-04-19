@@ -1,0 +1,7 @@
+#!/bin/sh
+mkdir -p /opt/netbehave/core /opt/netbehave/core/arin /opt/netbehave/core/assets /opt/netbehave/core/dailydb /opt/netbehave/core/debug /opt/netbehave/core/flowcounter /opt/netbehave/core/tails
+chown -R fluent /opt/netbehave/core
+chmod -R 700 /opt/netbehave/core
+
+mkdir -p /var/log/netbehave/core
+chown -R nobody.nobody /var/log/netbehave/core

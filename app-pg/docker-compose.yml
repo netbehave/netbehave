@@ -1,0 +1,278 @@
+#
+# Copyright 2019: Yves Desharnais
+# Part of NetBehave.org system
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# netbehave docker-compose
+# Initial test on amd64
+# version 2 is required for docker on raspberry pi 
+version: '3' 
+
+services:
+    netbehave-docker-base:
+        image: netbehave-docker-base
+        build: ../netbehave-docker-base
+#            args:
+#                ARCH: amd64
+        volumes:
+         - logs:/var/log
+         
+    netbehave-db:
+        image: postgres:alpine
+#        image: netbehave-postgres
+#        build: ./netbehave-postgres
+        environment:
+        - POSTGRES_PASSWORD=mysecretpassword
+#        - PGDATA=/data/pgdata 
+        - PGDATA=/opt/netbehave/postgres
+        - POSTGRES_DB=nb
+        - LANG=en_US.utf8
+        - PG_MAJOR=11
+        - PG_VERSION=11
+        # .1-r0
+        expose:
+        - "5432/tcp"
+        # TODO: expose port only for debug
+        ports:
+        - "5432:5432/tcp"
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+        networks:
+            default:
+            dnsinter:
+
+    netbehave-pg-initdb:
+        image: netbehave-pg-initdb
+        build: ../netbehave-pg-initdb
+        environment:
+        - LOGPATH=/var/log/netbehave/initdb
+        - POSTGRES_HOST=netbehave-db
+        - POSTGRES_DB=nb
+        - POSTGRES_PASSWORD=mysecretpassword
+        links:
+        - netbehave-db
+        depends_on:
+        - netbehave-db
+        volumes:
+        - logs:/var/log
+        networks:
+            default:
+            dnsinter:
+
+    netbehave-docker-fluentd:
+        image: netbehave-docker-fluentd
+        build: ../netbehave-docker-fluentd
+#        depends_on:
+#        - netbehave-docker-base
+        volumes:
+         - logs:/var/log
+
+    netbehave-dnsserver:
+        image: netbehave-dnsserver
+        build: ../netbehave-dnsserver
+        cap_add:
+        - NET_ADMIN
+        expose:
+        - "53/udp"
+        - "53/tcp"
+        ports:
+        - "53:53/udp"
+        - "53:53/tcp"
+        volumes:
+        - logs:/var/log
+        links:
+        - "netbehave-dnsserver-tls:netbehave-dnsserver-tls"
+        depends_on:
+        - netbehave-dnsserver-tls
+        environment:
+        - LOGFILE=/var/log/dnsmasq/dnsmasq.log
+        - DNSFORWARD=netbehave-dnsserver-tls
+#        - S6_LOGGING=0
+        networks:
+            default:
+            dnsinter:
+      
+    netbehave-dnsserver-tls:
+        image: netbehave-dnsserver-tls
+        build: ../netbehave-dnsserver-tls
+        depends_on:
+        - netbehave-docker-base
+        volumes:
+         - logs:/var/log
+        ports:
+         - "8053:8053/tcp"
+         - "8053:8053/udp"
+        networks:
+            dnsinter:
+                aliases:
+                - dnsfwd
+
+    netbehave-dnscache:
+        image: netbehave-dnscache
+        build: ../netbehave-dnscache
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+        environment:
+        - DNSCACHEDATADIR=/opt/netbehave/dnscache
+        depends_on:
+        - netbehave-docker-base
+        expose:
+        - "10001/tcp"
+        - "10002/tcp"
+        - "10003/tcp"
+        ports:
+        - "10001:10001/tcp"
+        - "10002:10002/tcp" # temp - to test from remote server
+        networks:
+            dnsinter:
+
+    netbehave-ipam:
+        image: netbehave-ipam
+        build: ../netbehave-ipam
+        depends_on:
+        - netbehave-docker-base
+        expose:
+        - "11001/tcp"
+        - "11002/tcp"
+        - "11003/tcp"
+        ports:
+        - "11001:11001/tcp"
+        - "11002:11002/tcp" # temp - to test from remote server
+        networks:
+            dnsinter:
+        volumes:
+        - data:/opt/netbehave
+        - logs:/var/log
+        environment:
+        - IPAMDATADIR=/opt/netbehave/ipam
+#        - IPAMLOGDIR=/var 
+
+    netbehave-dnslogparser:
+        image: netbehave-dnslogparser
+        build: ../netbehave-dnslogparser
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+#         - dnsmasq_data:/data
+#        links: 
+#        - netbehave-dnscache:netbehave-dnscache
+        depends_on:
+        - netbehave-dnsserver
+        - netbehave-dnscache
+        - netbehave-docker-fluentd
+        networks:
+            dnsinter:
+
+    netbehave-nfipfix-collector:
+        image: netbehave-collector-nfipfix
+        build: ../netbehave-collector-nfipfix
+        expose:
+        - "2055/udp"
+        ports:
+        - "2055:2055/udp"
+        networks:
+            dnsinter:
+        depends_on:
+        - netbehave-core
+        links:
+        - netbehave-core
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+        - tmp:/tmp
+        environment:
+        - LOCAL_NETWORKS="home=192.168.0.;docker=172.17.;NAT=1.1.1.1"
+        - S6_KEEP_ENV=1
+        
+        
+
+    netbehave-core:
+        image: netbehave-corepg
+        build: ../netbehave-corepg
+        expose:
+#        - "24223/tcp"
+        - "24224/tcp"
+        ports:
+#        - "24223:24223/tcp"
+        - "24224:24224/tcp"
+        depends_on:
+        - netbehave-www
+        - netbehave-dnscache
+        - netbehave-db
+        links:
+        - netbehave-www
+        - netbehave-dnscache
+        - netbehave-db
+        networks:
+            dnsinter:
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+    netbehave-www:
+        image: netbehave-wwwpg
+        build: ../netbehave-wwwpg
+        expose:
+        - "80/tcp"
+#        - "5000-5009/tcp"
+#        - "6000-6009/tcp"
+        ports:
+        - "8080:80/tcp"
+        - "5000:5000/tcp"
+        - "5002-5009:5002-5009/tcp"
+        - "6002-6009:6002-6009/tcp"
+        environment:
+        - POSTGRES_HOST=netbehave-db
+        - POSTGRES_DB=nb
+        - POSTGRES_PASSWORD=mysecretpassword
+        links:
+        - netbehave-db
+        depends_on:
+        - netbehave-db
+        - netbehave-docker-base
+        networks:
+            dnsinter:
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+    netbehave-alerting:
+        image: netbehave-alerting
+        build: ../netbehave-alerting
+        environment:
+        - ENV SMTP_USER=account@example.com
+        - ENV SMTP_PASSWORD=PASSWORD 
+        - ENV SMTP_RECIPIENT=account@example.com
+        - ENV SMTP_SERVER=smtp.example.com
+        - ENV SMTP_PORT=2525 # Is 25 blocked by default?
+        volumes:
+        - logs:/var/log
+        - data:/opt/netbehave
+
+
+networks:
+    dnsinter:
+
+
+volumes:
+    logs:
+#    logs1:
+    data:
+    tmp:
+    
+#  ipam_logs:
+#  ipam_data:
+#  dnsmasq_data:
+#  dns_logs:

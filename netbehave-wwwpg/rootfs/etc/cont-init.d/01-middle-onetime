@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p /var/log/netbehave/middle
+chown -R nobody.nobody /var/log/netbehave/middle
