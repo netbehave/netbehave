@@ -35,6 +35,9 @@ module Fluent
                         @lookup_table = create_lookup_table(table_file)
 
 						@networkRanges = {}
+#						log.debug "FlowNormalizerFilter local_networks=[#{local_networks}]"
+#						log.debug "FlowNormalizerFilter @local_networks=[#{@local_networks}]"
+
 						local_networks.split(";").each { |ln|
 							aln = ln.split("=")
 							@networkRanges[aln[1]] = aln[0]
