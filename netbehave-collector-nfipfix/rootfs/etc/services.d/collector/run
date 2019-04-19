@@ -18,4 +18,4 @@
 # along with NetBehave.  If not, see <https://www.gnu.org/licenses/>.
 fdmove -c 2 1 
 s6-setuidgid fluent 
-fluentd -c /fluentd/etc/fluent.conf -p /fluentd/plugins -v
+fluentd -c /fluentd/etc/fluent.conf -p /fluentd/plugins --use-v1-config -v 
