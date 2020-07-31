@@ -70,8 +70,12 @@ module Fluent
 				        when "direction";	  		flow["direction"] = value
 				        when "protocolIdentifier"; 	flow["protocol"] = value
 				        when "protocol";	  		flow["protocol"] = value 
-				        when "in_bytes","out_bytes";flow["bytes"] = value
-				        when "in_pkts","out_pkts";	flow["packets"] = value
+#				        when "in_bytes","out_bytes";flow["bytes"] = value
+#				        when "in_pkts","out_pkts";	flow["packets"] = value
+				        when "in_bytes";  flow["bytes"] = value; flow["in_bytes"] = value
+				        when "out_bytes"; flow["bytes"] = value; flow["out_bytes"] = value
+				        when "in_pkts";	 flow["packets"] = value; flow["in_packets"] = value
+				        when "out_pkts"; flow["packets"] = value; flow["out_packets"] = value
 				        when "tcp_flags";			flow["tcp_flags"] = value
 				        when "first_switched";		flow["first_switched"] = value
 				        when "last_switched";		flow["last_switched"] = value
