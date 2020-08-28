@@ -74,6 +74,8 @@ services:
         - POSTGRES_PASSWORD=nbv2pass
         depends_on:
         - netbehave-db
+        links:
+        - netbehave-db
         volumes:
         - logs:/var/log
         networks:
@@ -113,6 +115,10 @@ services:
         networks:
             default:
             dnsinter:
+        depends_on:
+        - netbehave-db
+        links:
+        - netbehave-db
         volumes:
         - ./log:/var/log/netbehave:z
         - ./data:/opt/netbehave:z

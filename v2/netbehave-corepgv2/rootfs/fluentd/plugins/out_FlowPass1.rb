@@ -36,21 +36,21 @@ module Fluent
     			config_param :dbpass, :string,  default: 'postgres'
     
                 def configure(conf)
-                        super
-                        now = DateTime.now
-						@yyyymmdd = now.strftime("%Y%m%d")
-						@dates = {}
+					super
+					now = DateTime.now
+					@yyyymmdd = now.strftime("%Y%m%d")
+					@dates = {}
 
-						@localIPs = {}
-						@destLabel = ""
-						@rulesCombinedFlows = nil
-						@rulesFlows = nil
-                end
-                def start
-                    super
+					@localIPs = {}
+					@destLabel = ""
+					@rulesCombinedFlows = nil
+					@rulesFlows = nil
                     if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)	
 						dbLoad
                     end
+                end
+                def start
+                    super
                 end
                 def shutdown
                     super
