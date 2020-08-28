@@ -27,8 +27,7 @@ module Fluent
                 def shutdown
                         super
                 end
-                def filter(tag, time, record)					
-
+                def filter(tag, time, record)
 					flow = record["flow"]
 
 					# fix NATed ports
@@ -43,15 +42,38 @@ module Fluent
 								 natPort["srcip"] = flow["src"]["ip"]
 								 natPort["dstip"] = flow["dst"]["ip"]
 								 @natPorts.addItem(natPortKey, natPort)
+								 flow["denat"] = "add"
 							elsif flow["src"]["network"] == "external" && flow["dst"]["network"] == @mapNatDstNetwork
 								 # src = external, dst = NAT => uses NAT
 								 natPortKey = "#{flow['src']['ip']}/#{flow['protocol_name']}/#{flow['src']['port']}"
 								 if @natPorts.hasKey(natPortKey)
 								 	natPort = @natPorts.getItem(natPortKey)
 								 	if natPort["dstip"] == flow["src"]["ip"]
+									 	flow["dst"]["natip"] = flow["dst"]["ip"]
 									 	flow["dst"]["ip"] = natPort["srcip"]
 									 	flow["dst"]["network"] = mapNatSrcNetwork
+									 	flow["denat"] = "dst"
+									 else
+									 	flow["denat"] = "dstip!=src/ip"
 									 end
+								 else
+									flow["denat"] = "unknown"
+								 end
+							elsif flow["dst"]["network"] == "external" && flow["src"]["network"] == @mapNatDstNetwork
+								 # src = external, dst = NAT => uses NAT
+								 natPortKey = "#{flow['dst']['ip']}/#{flow['protocol_name']}/#{flow['dst']['port']}"
+								 if @natPorts.hasKey(natPortKey)
+								 	natPort = @natPorts.getItem(natPortKey)
+								 	if natPort["dstip"] == flow["src"]["ip"]
+									 	flow["src"]["natip"] = flow["src"]["ip"]
+									 	flow["src"]["ip"] = natPort["srcip"]
+									 	flow["src"]["network"] = mapNatSrcNetwork
+									 	flow["denat"] = "src"
+									 else
+									 	flow["denat"] = "dstip!=src/ip"
+									 end
+								 else
+									flow["denat"] = "unknown"
 								 end
 							end
 						end

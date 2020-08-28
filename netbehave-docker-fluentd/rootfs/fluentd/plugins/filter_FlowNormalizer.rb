@@ -62,7 +62,7 @@ module Fluent
 					record.each_pair { |key, value|
 				        case key
 				        
-				        when "version"; 			flow["version"] = value
+				        when "version"; 			flow["version"] = value ; flow["source"] = "NetFlow/IPFix v#{value}"
 				        when "flow_seq_num"; 		flow["seq_num"] = value
 				        when "flowset_id"; 			flow["set_id"] = value
 				        when "ip_protocol_version"; flow["ip_version"] = value

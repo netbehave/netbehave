@@ -24,10 +24,10 @@ require 'csv'      # Sockets are in standard library
 class AclField
 	# Acceptable fields
 	@@validFields = ["protocol", "protocol_name", 
-		"ip_version", "host",
+		"ip_version", "host", "source", 
 		"src/arin/name", "dst/arin/name", 
-		"dst/ip", "dst/port", "dst/domain", "dst/network", 
-		"src/ip", "src/port", "src/domain", "src/network", 
+		"dst/ip", "dst/ip_i", "dst/port", "dst/domain", "dst/network", "dst/host/name", 
+		"src/ip", "src/ip_i", "src/port", "src/domain", "src/network", "src/host/name", 
 		"bytes", "packets", "match", "serviceName"]
 	@@operators = ["!=", "=", "<", ">"]
 
@@ -56,6 +56,7 @@ class AclField
 			puts "AclField:validateField error"
 
 		end
+		@sValue = toParse
 		parseValue(cols[1])
 	end # def initialize
 
@@ -138,9 +139,18 @@ class AclField
 #puts "#{value} == #{@value}"
 				bResult = true
 			end
+		when "inlist"
+			if @value.include?(",#{value.to_s},")
+#puts "#{value} == #{@value}"
+				bResult = true
+			end		
 		end
 # puts "FieldMatch::match(#{@field})  => #{bResult}"
 		return bResult
+	end
+	
+	def field_to_s
+		return @sValue
 	end
 
 	private
@@ -178,6 +188,9 @@ class AclField
 			@value = v
 			@operator = "IPinRange"
 			
+		elsif v.start_with?("[") && v.end_with?("]") 
+			@value = ",#{v[1..-2]}," 
+			@operator = "inlist"			
 		else
 			@value = v.to_s
 		end
