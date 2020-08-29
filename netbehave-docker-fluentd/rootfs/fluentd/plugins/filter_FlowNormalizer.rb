@@ -109,7 +109,9 @@ module Fluent
 						# log.info "Normalizer ", proto: flow["protocol"], name:@lookup_table[flow["protocol"].to_s]
 						if @lookup_table.key?(flow["protocol"].to_s)
 							flow["protocol_name"] = @lookup_table[flow["protocol"].to_s]
-				        	end
+						else
+							flow["protocol_name"] = "Unknown:#{flow["protocol"]}"
+						end
 					 end
 
 					parse_network(flow["src"])
