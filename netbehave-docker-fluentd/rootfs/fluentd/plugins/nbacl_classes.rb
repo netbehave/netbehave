@@ -26,8 +26,8 @@ class AclField
 	@@validFields = ["protocol", "protocol_name", 
 		"ip_version", "host", "source", 
 		"src/arin/name", "dst/arin/name", 
-		"dst/ip", "dst/ip_i", "dst/port", "dst/domain", "dst/network", "dst/host/name", 
-		"src/ip", "src/ip_i", "src/port", "src/domain", "src/network", "src/host/name", 
+		"dst/ip", "dst/ip_i", "dst/port", "dst/domain", "dst/network", "dst/host/name", "dst/netblock/name", 
+		"src/ip", "src/ip_i", "src/port", "src/domain", "src/network", "src/host/name", "src/netblock/name", 
 		"bytes", "packets", "match", "serviceName"]
 	@@operators = ["!=", "=", "<", ">"]
 
