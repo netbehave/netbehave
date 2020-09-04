@@ -30,6 +30,7 @@ module Fluent
     	# includes: dbOpen, dbClose
 		      Fluent::Plugin.register_output("FlowPass1", self) 
 
+    			config_param :saveRulesDetail, :bool,  default: false
     			config_param :dbhost, :string,  default: 'localhost'
     			config_param :dbname, :string,  default: 'postgres'
     			config_param :dbuser, :string,  default: 'postgres'
@@ -127,14 +128,14 @@ module Fluent
 									swapped = createSwapped(record["flow"]) 
 								end
 								ruleName = @rulesFlows.match(swapped)
+							else
 							end
 						end
 						if !ruleName.nil?
 							match_type = "rule"
-							record["flow"]['match_key'] = ruleName
-							log.debug "FlowPass1Output:flow rule found [#{ruleName}]"
-							# TODO: record as individual
-							insertUpdateDetail(time, rdate, record["flow"], match_type, swapped)
+							record["flow"]["match_type"] = match_type
+							record["flow"]["match_key"] = ruleName
+							insertUpdateDetail(time, rdate, record["flow"], match_type, swapped, @saveRulesDetail)
 							return
 						end
 						
@@ -152,10 +153,9 @@ module Fluent
 						end
 						if !ruleName.nil?				
 							match_type = "combined"
-							record["flow"]['match_key'] = ruleName
-							log.debug "FlowPass1Output:combined rule found [#{ruleName}]"
-							# TODO: record as individual
-							insertUpdateDetail(time, rdate, record["flow"], match_type, swapped)
+							record["flow"]["match_type"] = match_type
+							record["flow"]["match_key"] = ruleName
+							insertUpdateDetail(time, rdate, record["flow"], match_type, swapped, @saveRulesDetail)
 							return
 						end
 						
@@ -168,36 +168,41 @@ module Fluent
 						elsif record["flow"]["serviceDirection"] == "dst"
 							record["flow"]["src"]["port"] = 0
 							match_type = "individual"
+						else
+							match_type = "unknown"
 						end
 						
-						insertUpdateDetail(time, rdate, record["flow"], match_type, swapped)
+						record["flow"]["match_type"] = match_type
+						# record["flow"]["match_key"] = ruleName
+						insertUpdateDetail(time, rdate, record["flow"], match_type, swapped, nil)
 					else
 						log.error "FlowPass1Output:handle_record() Database not open"
 					end
 				end # def handle_record
 				
-				def insertUpdateDetail(time, rdate, flow, match_type, swapped)
-						hits = sqlExists_Individual(flow, rdate)
-						# TODO : forward and reverse
-						if hits <= 0
-							# is it reversed?
-							# 
-							if swapped.nil?
-								swapped = createSwapped(flow) 
-							end
-							hitsSwapped = sqlExists_Individual(swapped, rdate)
-						end
-						
-						if hits > 0
-							sqlUPDATE_Individual(flow, time, hits, rdate)
-						else
-							if hitsSwapped > 0 
-								sqlUPDATE_Individual(swapped, time, hitsSwapped, rdate)
-							else
-								sqlINSERT_Individual(flow, time, rdate, match_type)
-							end
-						end				
-				end # 
+				
+		def insertUpdateDetail(time, rdate, flow, match_type, swapped, bSaveDetail)
+				hits = sqlExists_Individual(flow, rdate, bSaveDetail)
+				# TODO : forward and reverse
+				if hits <= 0
+					# is it reversed?
+					# 
+					if swapped.nil?
+						swapped = createSwapped(flow) 
+					end
+					hitsSwapped = sqlExists_Individual(swapped, rdate, bSaveDetail)
+				end
+				
+				if hits > 0
+					sqlUPDATE_Individual(flow, time, hits, rdate, bSaveDetail)
+				else
+					if hitsSwapped > 0 
+						sqlUPDATE_Individual(swapped, time, hitsSwapped, rdate, bSaveDetail)
+					else
+						sqlINSERT_Individual(flow, time, rdate, match_type, bSaveDetail)
+					end
+				end				
+		end # 
 				
 
 	def createSwapped(flow) 
@@ -215,12 +220,14 @@ module Fluent
 #		log.debug "FlowPass1Output:sqlCREATE(#{@yyyymmdd}) step 2"
 		begin
 			if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)			
+						# DROP TABLE flow_detail_#{@yyyymmdd};
 				rows = @db.exec <<-SQL 
+						
 						CREATE TABLE IF NOT EXISTS flow_detail_#{@yyyymmdd} 
 						(
-							srcip varchar(20),
-							dstip varchar(20),
-							proto varchar(10),
+							srcip varchar(200),
+							dstip varchar(200),
+							proto varchar(200),
 							srcport int,
 							dstport int,
 				
@@ -234,8 +241,8 @@ module Fluent
 							match_key varchar(200),
 
 							hits int,
-							bytes_in int,
-							bytes_out int,
+							bytes_in bigint,
+							bytes_out bigint,
 							json_data JSONB,
 				
 							PRIMARY KEY (srcip, dstip, proto, srcport, dstport)
@@ -258,7 +265,7 @@ module Fluent
 	  end
 	end # sqlCREATE
 	
-	def sqlINSERT_Individual(flow, time, rdate, match_type)
+	def sqlINSERT_Individual(flow, time, rdate, match_type, bSaveDetail)
 		if @yyyymmdd != rdate
 			setDBdate rdate
 		end
@@ -270,7 +277,8 @@ module Fluent
 			srcnetblock = flow["src"]["netblock"].nil? ? "" : flow["src"]["netblock"]['name']
 			dstnetblock = flow["dst"]["netblock"].nil? ? "" : flow["dst"]["netblock"]['name']
 			servicename = flow["serviceName"].nil? ? "" : flow["serviceName"]
-			match_key = flow['match_key'].nil? ? "#{flow["src"]["ip"].to_s}:#{flow["src"]["port"]}/#{flow["protocol_name"]}/#{flow["dst"]["ip"].to_s}:#{flow["dst"]["port"]}" : flow['match_key']
+			match_key = flow['match_key'].nil? ? '#{flow["src"]["ip"].to_s}:#{flow["src"]["port"]}/#{flow["protocol_name"]}/#{flow["dst"]["ip"].to_s}:#{flow["dst"]["port"]}' : flow['match_key']
+
 
 			if flow["bytes"].nil? || flow["bytes"] == ""
 				bytes_in = bytes_out = 0
@@ -280,16 +288,42 @@ module Fluent
 				bytes_out = flow["out_bytes"].to_i
 			end
 			hits = 1
+			
+			begin
+				flowstr = flow.to_json.to_s
+			rescue => err
+				log.error "FlowPass1Output:sqlINSERT() Exception converting flow [#{err}]"
+				flowstr = nil
+			end
+			
+			if flowstr.nil?
+				begin
+					flowstr = flow.to_s.force_encoding('ISO-8859-1')
+				rescue => err
+					log.error "FlowPass1Output:sqlINSERT() Exception(2) converting flow [#{err}]"
+					flowstr = "{}"
+				end
+			end
 		
+			queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i, srcdns, dstdns, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, flowstr]
+
+			if !bSaveDetail.nil?
+				if !bSaveDetail 
+					if flow.key?("match_key")
+						queryParams = [flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0, '', '', '', '', '', match_type, match_key, bytes_in, bytes_out, hits, '{}']
+					end
+				end
+			end
+
 	# puts "sqlINSERT match=[#{match}]"
 			rows = @db.exec_params("INSERT INTO flow_detail_#{rdate}  (srcip, dstip, proto, srcport, dstport, srcdns, dstdns, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)", 
-				[flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i, srcdns, dstdns, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, flow.to_json.to_s])
+				queryParams)
 		else
 			log.error "FlowPass1Output:sqlINSERT() Database not open"
 		end
 	end #def
 
-	def sqlUPDATE_Individual(flow, time, hits, rdate)
+	def sqlUPDATE_Individual(flow, time, hits, rdate, bSaveDetail)
 		if @yyyymmdd != rdate
 			setDBdate rdate
 		end
@@ -301,24 +335,40 @@ module Fluent
 				bytes_in = flow["in_bytes"].to_i
 				bytes_out = flow["out_bytes"].to_i
 			end
-			old_bytes_in, old_bytes_out = sqlBytes_Individual(flow, rdate)
+			old_bytes_in, old_bytes_out = sqlBytes_Individual(flow, rdate, bSaveDetail)
+			queryParams = [hits + 1, bytes_in + old_bytes_in, bytes_out + old_bytes_out, flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i]
+			if !bSaveDetail.nil?
+				if !bSaveDetail 
+					if flow.key?("match_key")
+						queryParams = [hits + 1, bytes_in + old_bytes_in, bytes_out + old_bytes_out, flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0]
+					end
+				end
+			end
 			# newbytes = bytes + 
 			rows = @db.exec_params("UPDATE flow_detail_#{rdate} SET hits = $1, bytes_in = $2, bytes_out = $3 WHERE srcip = $4 AND dstip = $5 AND proto = $6 AND srcport = $7 AND dstport = $8  ", # dateAdded = $1, dateLastSeen = $2, AND srcdomain = $10 AND dstdomain = $11
-				[hits + 1, bytes_in + old_bytes_in, bytes_out + old_bytes_out, flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i])	# , srcdomain, dstdomain
+				queryParams)	# , srcdomain, dstdomain
 		else
 			log.error "FlowPass1Output:sqlUPDATE() Database not open"
 		end
 	end #def
 	
-	def sqlExists_Individual(flow, rdate)
+	def sqlExists_Individual(flow, rdate, bSaveDetail)
 		if @yyyymmdd != rdate
 			setDBdate rdate
 		end
 		if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)
 			# srcdomain = flow["src"]["domain"].nil? ? "" : flow["src"]["domain"].to_s
 			# dstdomain = flow["dst"]["domain"].nil? ? "" : flow["dst"]["domain"].to_s
+			queryParams =[flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"].to_s, flow["src"]["port"].to_i, flow["dst"]["port"].to_i]
+			if !bSaveDetail.nil?
+				if !bSaveDetail 
+					if flow.key?("match_key")
+						queryParams =[flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0]
+					end
+				end
+			end
 			results = @db.exec_params("SELECT sum(hits) as sumhits FROM flow_detail_#{rdate} WHERE srcip = $1 AND dstip = $2 AND proto = $3 AND srcport = $4 AND dstport = $5 ", #AND srcdomain = $6 AND dstdomain = $7
-				[flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"].to_s, flow["src"]["port"].to_i, flow["dst"]["port"].to_i]) # , srcdomain, dstdomain
+				queryParams) # , srcdomain, dstdomain
 			rows = results.values
 			if rows.nil?
 	#puts "s1"	
@@ -345,15 +395,24 @@ module Fluent
 	end #def
 
 	# TODO: private???
-	def sqlBytes_Individual(flow, rdate)
+	def sqlBytes_Individual(flow, rdate, bSaveDetail)
 		if @yyyymmdd != rdate
 			setDBdate rdate
 		end
 		if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)
 #			srcdomain = flow["src"]["domain"].nil? ? "" : flow["src"]["domain"]
 #			dstdomain = flow["dst"]["domain"].nil? ? "" : flow["dst"]["domain"]
+			queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i]
+			if !bSaveDetail.nil?
+				if !bSaveDetail 
+					if flow.key?("match_key")
+						queryParams =[flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0]
+					end
+				end
+			end
+
 			results = @db.exec_params("SELECT bytes_in, bytes_out FROM flow_detail_#{rdate} WHERE srcip = $1 AND dstip = $2 AND proto = $3 AND srcport = $4 AND dstport = $5", #  AND srcdomain = $6 AND dstdomain = $7 
-				[flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i]) # , srcdomain, dstdomain
+				queryParams) # , srcdomain, dstdomain
 			rows = results.values
 
 			if rows.nil?

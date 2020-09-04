@@ -140,7 +140,7 @@ class AclField
 				bResult = true
 			end
 		when "inlist"
-			if @value.include?(",#{value.to_s},")
+			if @value.include?(";#{value.to_s};")
 #puts "#{value} == #{@value}"
 				bResult = true
 			end		
@@ -189,7 +189,7 @@ class AclField
 			@operator = "IPinRange"
 			
 		elsif v.start_with?("[") && v.end_with?("]") 
-			@value = ",#{v[1..-2]}," 
+			@value = ";#{v[1..-2]};" 
 			@operator = "inlist"			
 		else
 			@value = v.to_s
