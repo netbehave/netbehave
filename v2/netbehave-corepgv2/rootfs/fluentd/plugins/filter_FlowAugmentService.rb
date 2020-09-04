@@ -131,7 +131,7 @@ CREATE TABLE ip_listen (
 					return lookup_table
 				end
 
-				rs = @db.exec("SELECT protoPort, serviceName, serviceDescription FROM service")
+				rs = @db.exec("SELECT protoPort, serviceName, serviceDescription FROM public.service;")
 				
 				rs.each do |row|
 					handle_row(lookup_table, row)

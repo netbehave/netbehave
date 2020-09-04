@@ -113,7 +113,7 @@ SELECT json_data FROM unknown WHERE unknown_type = 'net_block' AND unknown_key =
 						rows.each do |row|
 #						log.info "Netblock for ip=#{ip},#{ip_i	} => [#{row[0]},#{row[1]},#{row[2]}] #{row.to_s}"
 							netblock = {}
-							netblock["name"] 	= row['net_block_name']
+							netblock["name"] 	= row['net_block_name'].force_encoding('UTF-8')
 							netblock["source"] 	= row['net_block_source']
 							netblock["subnet"] 	= row['net_block_subnet']
 							frecord["netblock"] = netblock
