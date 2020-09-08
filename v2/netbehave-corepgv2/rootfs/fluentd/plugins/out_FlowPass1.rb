@@ -220,7 +220,8 @@ module Fluent
 #		log.debug "FlowPass1Output:sqlCREATE(#{@yyyymmdd}) step 2"
 		begin
 			if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)			
-						# DROP TABLE flow_detail_#{@yyyymmdd};
+#				log.debug "FlowPass1Output:sqlCREATE(#{@yyyymmdd}) drop table"
+#				@db.exec ("DROP TABLE flow_detail_#{@yyyymmdd};")
 				rows = @db.exec <<-SQL 
 						
 						CREATE TABLE IF NOT EXISTS flow_detail_#{@yyyymmdd} 
@@ -320,7 +321,7 @@ module Fluent
 			end
 
 	# puts "sqlINSERT match=[#{match}]"
-			rows = @db.exec_params("INSERT INTO flow_detail_#{rdate}  (srcip, dstip, proto, srcport, dstport, srcdns, dstdns, srcnetwork, dstnetwork, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)", 
+			rows = @db.exec_params("INSERT INTO flow_detail_#{rdate}  (srcip, dstip, proto, srcport, dstport, srcdns, dstdns, srcnetwork, dstnetwork, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)", 
 				queryParams)
 		else
 			log.error "FlowPass1Output:sqlINSERT() Database not open"
