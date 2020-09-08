@@ -232,6 +232,8 @@ module Fluent
 							dstport int,
 				
 							servicename varchar(200),
+							srcnetwork varchar(200),
+							dstnetwork varchar(200),
 							srcnetblock varchar(200),
 							dstnetblock varchar(200),
 							srcdns varchar(200),
@@ -274,6 +276,8 @@ module Fluent
 	#		@@logger.debug "SQL.INSERT #{flow.inspect}"
 			srcdns = flow["src"]["dns"].nil? ? "" : flow["src"]["dns"]
 			dstdns = flow["dst"]["dns"].nil? ? "" : flow["dst"]["dns"]
+			srcnetwork = flow["src"]["network"].nil? ? "" : flow["src"]["network"]
+			dstnetwork = flow["dst"]["network"].nil? ? "" : flow["dst"]["network"]
 			srcnetblock = flow["src"]["netblock"].nil? ? "" : flow["src"]["netblock"]['name']
 			dstnetblock = flow["dst"]["netblock"].nil? ? "" : flow["dst"]["netblock"]['name']
 			servicename = flow["serviceName"].nil? ? "" : flow["serviceName"]
@@ -305,18 +309,18 @@ module Fluent
 				end
 			end
 		
-			queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i, srcdns, dstdns, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, flowstr]
+			queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i, srcdns, dstdns, srcnetwork, dstnetwork, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, flowstr]
 
 			if !bSaveDetail.nil?
 				if !bSaveDetail 
 					if flow.key?("match_key")
-						queryParams = [flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0, '', '', '', '', '', match_type, match_key, bytes_in, bytes_out, hits, '{}']
+						queryParams = [flow["match_key"].to_s, flow["match_key"].to_s, flow["match_key"].to_s, 0, 0, '', '', '', '', '', '', '', match_type, match_key, bytes_in, bytes_out, hits, '{}']
 					end
 				end
 			end
 
 	# puts "sqlINSERT match=[#{match}]"
-			rows = @db.exec_params("INSERT INTO flow_detail_#{rdate}  (srcip, dstip, proto, srcport, dstport, srcdns, dstdns, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)", 
+			rows = @db.exec_params("INSERT INTO flow_detail_#{rdate}  (srcip, dstip, proto, srcport, dstport, srcdns, dstdns, srcnetwork, dstnetwork, srcnetblock, dstnetblock, servicename, match_type, match_key, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)", 
 				queryParams)
 		else
 			log.error "FlowPass1Output:sqlINSERT() Database not open"
