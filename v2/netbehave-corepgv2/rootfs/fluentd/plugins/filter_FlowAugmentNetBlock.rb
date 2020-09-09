@@ -29,7 +29,7 @@ module Fluent
         Fluent::Plugin.register_filter('FlowAugmentNetBlock', self)
 
 		config_param :dbfile, :string, :default => nil
-		config_param :onlyNoDomains, :bool, :default => false # TODO
+		config_param :unknownUseSubnet, :integer, :default => 24 # TODO
 		config_param :dbhost, :string,  default: 'localhost'
 		config_param :dbname, :string,  default: 'postgres'
 		config_param :dbuser, :string,  default: 'postgres'
@@ -37,6 +37,13 @@ module Fluent
 
 		def configure(conf)
 			super
+			if @unknownUseSubnet > 0
+				if @unknownUseSubnet > 32
+					log.error "FlowAugmentNetBlockFilter::configure() parameter unknownUseSubnet must have a value between 0 and 32"
+					# TODO : error
+					@unknownUseSubnet = 0
+				end
+			end
 		end
 		
 		def start
@@ -128,26 +135,39 @@ SELECT json_data FROM unknown WHERE unknown_type = 'net_block' AND unknown_key =
 
 					if frecord["netblock"].nil?						
 						# add netblock task
-						subnet24 = IPAddr.new(ip, Socket::AF_INET).mask(24)
-#						log.info "No Netblock for ip=#{ip},#{ip_i} in subnet #{subnet24}/24"		
-#						log.info "SELECT json_data FROM unknown WHERE unknown_type = 'net_block' AND unknown_key = '#{subnet24}/24'"
+						
+						if @unknownUseSubnet > 0
+							unknownSubnet = IPAddr.new(ip, Socket::AF_INET).mask(@unknownUseSubnet)
+							unknownSubnetStr = "#{unknownSubnet.to_s}/#{@unknownUseSubnet}"
+							netblock = {}
+							netblock["name"] 	= unknownSubnetStr
+							netblock["source"] 	= "calculated"
+							netblock["subnet"] 	= unknownSubnetStr
+							frecord["netblock"] = netblock
+						else 
+							unknownSubnet = IPAddr.new(ip, Socket::AF_INET).mask(24)
+							unknownSubnetStr = "#{unknownSubnet.to_s}/24"
+						end
+						
+#						log.info "No Netblock for ip=#{ip},#{ip_i} in subnet #{unknownSubnetStr}"		
+#						log.info "SELECT json_data FROM unknown WHERE unknown_type = 'net_block' AND unknown_key = '#{unknownSubnetStr}'"
 						
 						begin
-							rows = @db.exec_params("SELECT json_data FROM unknown WHERE unknown_type = $1 AND unknown_key = $2;", ['net_block', "#{subnet24}/24"])
+							rows = @db.exec_params("SELECT json_data FROM unknown WHERE unknown_type = $1 AND unknown_key = $2;", ['net_block', "#{unknownSubnetStr}"])
 						rescue PG::Error => err
 							log.error PG_Error_to_s(err)		
 						end
 						
 #						log.info "after @db.exec_params"
 						if rows.nil? || rows.ntuples == 0
-#							log.info "Unknown-INSERT Netblock for ip=#{ip},#{ip_i} in subnet #{subnet24}"		
+#							log.info "Unknown-INSERT Netblock for ip=#{ip},#{ip_i} in subnet #{unknownSubnetStr}"		
 							jso = {}
 							jso["ip"] = []
 							# jso["ip"][0] = ip
 							jso["ip"].push(ip)
-#							log.info "INSERT INTO unknown (unknown_type, unknown_key, json_data) VALUES ('net_block', '#{subnet24}/24', '#{jso.to_json.to_s}');"
+#							log.info "INSERT INTO unknown (unknown_type, unknown_key, json_data) VALUES ('net_block', '#{unknownSubnetStr}', '#{jso.to_json.to_s}');"
 						begin
-							rows = @db.exec_params("INSERT INTO unknown (unknown_type, unknown_key, json_data, status) VALUES ('net_block', $1, $2, 'new');", ["#{subnet24}/24", jso.to_json.to_s])
+							rows = @db.exec_params("INSERT INTO unknown (unknown_type, unknown_key, json_data, status) VALUES ('net_block', $1, $2, 'new');", ["#{unknownSubnetStr}", jso.to_json.to_s])
 						rescue PG::Error => err
 							log.error PG_Error_to_s(err)		
 						end
@@ -158,8 +178,8 @@ SELECT json_data FROM unknown WHERE unknown_type = 'net_block' AND unknown_key =
 							end
 							if !jso["ip"].include?(ip)
 								jso["ip"] |= [ip]  # jso["ip"].push(ip)							
-#								log.info "Unknown-UPDATE Netblock for ip=#{ip},#{ip_i} in subnet #{subnet24} #{jso.to_json.to_s}"		
-								rows = @db.exec_params("UPDATE unknown SET json_data = $1 WHERE unknown_type = $2 AND unknown_key = $3;", [jso.to_json.to_s, 'net_block', "#{subnet24}/24"])
+#								log.info "Unknown-UPDATE Netblock for ip=#{ip},#{ip_i} in subnet #{unknownSubnetStr} #{jso.to_json.to_s}"		
+								rows = @db.exec_params("UPDATE unknown SET json_data = $1 WHERE unknown_type = $2 AND unknown_key = $3;", [jso.to_json.to_s, 'net_block', "#{unknownSubnetStr}"])
 							end							
 						end
 						
