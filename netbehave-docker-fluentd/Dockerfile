@@ -71,6 +71,7 @@ ENV S6_OVERLAY_MD5HASH 3eb36dc6524522d8c637106ce74ded18
 ENV TZ=America/New_York
 
 RUN apk add -U tzdata
+RUN apk add bind-tools
 
 RUN apk add --no-cache wget ca-certificates && \
 	apk --no-cache --update upgrade && \

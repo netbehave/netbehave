@@ -42,6 +42,7 @@ ENV TZ=America/New_York
 RUN apk add --no-cache wget ca-certificates && \
 	apk --no-cache --update upgrade && \
 	apk add -U tzdata && \
+	apk add bind-tools && \
 	cd /tmp && \
 	wget https://github.com/just-containers/s6-overlay/releases/download/v$S6_OVERLAY_VERSION/s6-overlay-$ARCH.tar.gz && \
 	echo "$S6_OVERLAY_MD5HASH *s6-overlay-$ARCH.tar.gz" | md5sum -c - &&  \
