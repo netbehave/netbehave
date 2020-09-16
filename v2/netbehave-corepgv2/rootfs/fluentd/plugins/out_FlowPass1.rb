@@ -282,7 +282,8 @@ module Fluent
 			srcnetblock = flow["src"]["netblock"].nil? ? "" : flow["src"]["netblock"]['name']
 			dstnetblock = flow["dst"]["netblock"].nil? ? "" : flow["dst"]["netblock"]['name']
 			servicename = flow["serviceName"].nil? ? "" : flow["serviceName"]
-			match_key = flow['match_key'].nil? ? '#{flow["src"]["ip"].to_s}:#{flow["src"]["port"]}/#{flow["protocol_name"]}/#{flow["dst"]["ip"].to_s}:#{flow["dst"]["port"]}' : flow['match_key']
+#			match_key = flow['match_key'].nil? ? '#{flow["src"]["ip"].to_s}:#{flow["src"]["port"]}/#{flow["protocol_name"]}/#{flow["dst"]["ip"].to_s}:#{flow["dst"]["port"]}' : flow['match_key']
+			match_key = flow['match_key'].nil? ? "#{flow['src']['ip'].to_s}:#{flow['src']['port']}/#{flow['protocol_name']}/#{flow['dst']['ip'].to_s}:#{flow['dst']['port']} ": flow['match_key']
 
 
 			if flow["bytes"].nil? || flow["bytes"] == ""
