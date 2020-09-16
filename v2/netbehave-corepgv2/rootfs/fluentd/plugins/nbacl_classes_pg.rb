@@ -56,7 +56,7 @@ class PG_ACL # like class CSV_ACL, but in PG
 			begin
 	      		parse_row_db(row)
 	      	rescue => err
-	      		$log.errror "PG_ACL:create_lookup_table_from_db() Error: #{err.to_s}"
+	      		$log.error "PG_ACL:create_lookup_table_from_db() Error: #{err.to_s}"
 	      	end		
 		end
 		$log.info "PG_ACL:create_lookup_table_from_db::Loaded #{@nbRules} rules"
@@ -137,7 +137,7 @@ class COMBINED_FLOWS < PG_ACL
 			begin
 	      		parse_row_db(row)
 	      	rescue => err
-	      		$log.errror "COMBINED_FLOWS:create_lookup_table_from_db() Error: #{err.to_s}"
+	      		$log.error "COMBINED_FLOWS:create_lookup_table_from_db() Error: #{err.to_s}"
 	      	end		
 		end
 		$log.info "COMBINED_FLOWS:create_lookup_table_from_db::Loaded #{@nbRules} rules"
@@ -174,7 +174,7 @@ class FLOW_RULES < PG_ACL
 			begin
 	      		parse_row_db(row)
 	      	rescue => err
-	      		$log.errror "FLOW_RULES:create_lookup_table_from_db() Error: #{err.to_s}"
+	      		$log.error "FLOW_RULES:create_lookup_table_from_db() Error: #{err.to_s}"
 	      	end
 		end
 		$log.info "FLOW_RULES:create_lookup_table_from_db::Loaded #{@nbRules} rules"
