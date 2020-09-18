@@ -125,7 +125,7 @@ hi.json_data
 						return 
 					end
 					
-					rs.each do |row|
+					rows.each do |row|
 						host = {}
 						host["id_host_info"]= row['id_host_info']
 						host["source"] 		= row['host_source']
