@@ -137,11 +137,25 @@ hi.json_data
 
 					if frecord["host"].nil?						
 						# needed ??
-						# subnet24 = IPAddr.new(ip, Socket::AF_INET).mask(24)
-						# rows = @db.exec_params("INSERT INTO unknown (unknown_type, unknown_key, json_data) VALUES ('net_block', $1, [$2])", [subnet24, ])
-						# add netblock task
-						# TODO
-					end
+
+						begin
+						# log.info "SELECT json_data FROM unknown WHERE unknown_type = 'dns' AND unknown_key = '#{ip}';"						
+							rows = @db.exec_params("SELECT json_data FROM unknown WHERE unknown_type = $1 AND unknown_key = $2;", ['host_info_ip', ip])
+						rescue PG::Error => err
+							log.error PG_Error_to_s(err)
+							rows = nil
+						end
+
+						if rows.nil? || rows.ntuples == 0
+							# log.info "INSERT INTO unknown (unknown_type, unknown_key, json_data) VALUES ('dns', #{ip}', '#{jso.to_json.to_s}'); ';"						
+							jso = {}
+							jso = frecord
+							rows = @db.exec_params("INSERT INTO unknown (unknown_type, unknown_key, json_data, status) VALUES ('host_info_ip', $1, $2, 'new');", [ip, jso.to_json.to_s])
+						else
+							# rows = @db.exec_params("UPDATE unknown SET json_data = $1 WHERE unknown_type = $2 AND unknown_key = $3", [jso.to_s, 'dns', ip])
+						end
+
+					end # if frecord["host"].nil?	
 				rescue => e
 				end
 				
