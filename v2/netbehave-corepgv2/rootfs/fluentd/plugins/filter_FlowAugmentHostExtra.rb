@@ -53,11 +53,11 @@ module Fluent
 			# log.info "FlowArinWhoisFilter: #{record["flow"].inspect}"
 			 if !record["flow"].nil?			 
 				 if !record["flow"]["src"]["host"].nil?
-					 augmentWithHostExtra(record["flow"]["src"])
+					 augmentWithHostExtra(record["flow"]["src"], record["flow"])
 				 end
 			 
 				 if !record["flow"]["dst"]["host"].nil?
-					 augmentWithHostExtra(record["flow"]["dst"])
+					 augmentWithHostExtra(record["flow"]["dst"], record["flow"])
 				 end
 			 end			
 
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS host_info_extra (
 
 =end
 
-		def augmentWithHostExtra(frecord)
+		def augmentWithHostExtra(frecord, flow)
 				begin
 					# ip_i = IPAddr.new(ip, Socket::AF_INET).to_i
 
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS host_info_extra (
 					else
 						if frecord["host"]['id_host_info'].nil?
 							# exists 
-							rows = @db.exec_params("SELECT category, optkey, json_data FROM host_info_extra WHERE id_host_info = $1 AND host_source = $2 AND host_source_id = $3;", [host["id_host_info"], host["source"], host["source_id"]  ])
+							rows = @db.exec_params("SELECT category, matchkey, optkey, json_data FROM host_info_extra WHERE id_host_info = $1 AND host_source = $2 AND host_source_id = $3;", [host["id_host_info"], host["source"], host["source_id"]  ])
 						else
 						# does not exist, do nothing
 						end
@@ -111,11 +111,14 @@ CREATE TABLE IF NOT EXISTS host_info_extra (
 					end
 					
 					rows.each do |row|
-						category = {}
-						category["name"] 		= row['category']
-						category["key"]  		= row['optkey']
-						category["data"] 	= JSON.parse(row['json_data'])
-						frecord["host"][category["name"]] = category
+						matchkey = row['matchkey']
+						if matchkey.nil? || row['optkey'] == flow[matchkey]
+							category = {}
+							category["name"] 		= row['category']
+							category["data"] 	= JSON.parse(row['json_data'])
+							frecord["host"][category["name"]] = category
+#						category["key"]  		= row['optkey']
+						end
 					end
 
 				rescue => e
