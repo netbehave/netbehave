@@ -436,7 +436,7 @@ module Fluent
 	#puts "sqlBytes rows #{rows} row  #{row}" 	
 	#puts "sqlBytes row['bytes']  #{row['bytes']}" 	
 	#		return row['bytes'].to_i
-			return [row[0].to_i, row[1].to_i]
+			return [row[0].to_i, row[1].to_i, row[2].to_i]
 		else
 			log.error "FlowPass1Output:sqlBytes() Database not open"
 		end	
