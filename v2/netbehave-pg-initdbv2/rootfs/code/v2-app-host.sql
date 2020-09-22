@@ -156,3 +156,31 @@ DROP TRIGGER IF EXISTS update_app_component_host_changetimestamp
 CREATE TRIGGER update_app_component_host_changetimestamp BEFORE UPDATE
     ON app_component_host FOR EACH ROW EXECUTE PROCEDURE 
     update_changelast_modified_column();
+    
+CREATE TABLE IF NOT EXISTS host_info_extra (
+  id_host_info 	INT, 
+  host_source		TEXT,
+  host_source_id	TEXT,
+
+  category			TEXT,
+  matchkey			TEXT,
+  matchvalue		TEXT,
+  jsonkey			TEXT,
+  json_data 		JSONB,
+
+  FOREIGN KEY (id_host_info) REFERENCES host_info (id_host_info)
+) INHERITS (timestamp_object);
+
+
+DROP TRIGGER IF EXISTS update_host_info_extra_changetimestamp
+	ON public.host_info_extra;
+
+CREATE TRIGGER update_host_info_extra_changetimestamp BEFORE UPDATE
+    ON host_info_extra FOR EACH ROW EXECUTE PROCEDURE 
+    update_changelast_modified_column();
+
+-- host_info_extra_augment
+
+--  UNIQUE (host_source, host_source_id)
+--  UNIQUE (host_source, host_source_id, ip),
+--  PRIMARY KEY (id_host_info, host_source, host_source_id, ip),

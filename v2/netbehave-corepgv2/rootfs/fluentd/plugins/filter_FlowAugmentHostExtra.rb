@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS host_info_extra (
 					else
 						if frecord["host"]['id_host_info'].nil?
 							# exists 
-							rows = @db.exec_params("SELECT category, matchkey, optkey, json_data FROM host_info_extra WHERE id_host_info = $1 AND host_source = $2 AND host_source_id = $3;", [host["id_host_info"], host["source"], host["source_id"]  ])
+							rows = @db.exec_params("SELECT category, matchkey, matchvalue, jsonkey, json_data FROM host_info_extra WHERE id_host_info = $1 AND host_source = $2 AND host_source_id = $3;", [host["id_host_info"], host["source"], host["source_id"]  ])
 						else
 						# does not exist, do nothing
 						end
@@ -112,11 +112,22 @@ CREATE TABLE IF NOT EXISTS host_info_extra (
 					
 					rows.each do |row|
 						matchkey = row['matchkey']
-						if matchkey.nil? || row['optkey'] == flow[matchkey]
+						if matchkey.nil? || row['matchvalue'] == flow[matchkey]
 							category = {}
-							category["name"] 		= row['category']
-							category["data"] 	= JSON.parse(row['json_data'])
-							frecord["host"][category["name"]] = category
+							category["name"] = row['category']
+							jso = JSON.parse(row['json_data'])
+							
+							jsonkey = row['jsonkey']
+							if jsonkey.nil?
+								if jso.key?(jsonkey)
+									category["data"] = jso[jsonkey]
+								end
+							else
+								category["data"] = jso
+							end
+							if category.key?("data")
+								frecord["host"][category["name"]] = category
+							end
 #						category["key"]  		= row['optkey']
 						end
 					end
