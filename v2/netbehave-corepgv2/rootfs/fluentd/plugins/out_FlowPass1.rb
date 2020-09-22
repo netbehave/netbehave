@@ -336,12 +336,14 @@ module Fluent
 		if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)
 			if flow["bytes"].nil? || flow["bytes"] == ""
 				bytes = 0
+				bytes_in = 0
+				bytes_out = 0
 			else
 				bytes = flow["bytes"].to_i
 				bytes_in = flow["in_bytes"].to_i
 				bytes_out = flow["out_bytes"].to_i
 			end
-			old_bytes_in, old_bytes_out = sqlBytes_Individual(flow, rdate, bSaveDetail)
+			old_bytes_in, old_bytes_out, hits = sqlBytes_Individual(flow, rdate, bSaveDetail)
 			queryParams = [hits + 1, bytes_in + old_bytes_in, bytes_out + old_bytes_out, flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, flow["protocol_name"], flow["src"]["port"].to_i, flow["dst"]["port"].to_i]
 			if !bSaveDetail.nil?
 				if !bSaveDetail 
@@ -417,19 +419,19 @@ module Fluent
 				end
 			end
 
-			results = @db.exec_params("SELECT bytes_in, bytes_out FROM flow_detail_#{rdate} WHERE srcip = $1 AND dstip = $2 AND proto = $3 AND srcport = $4 AND dstport = $5", #  AND srcdomain = $6 AND dstdomain = $7 
+			results = @db.exec_params("SELECT bytes_in, bytes_out, hits FROM flow_detail_#{rdate} WHERE srcip = $1 AND dstip = $2 AND proto = $3 AND srcport = $4 AND dstport = $5", #  AND srcdomain = $6 AND dstdomain = $7 
 				queryParams) # , srcdomain, dstdomain
 			rows = results.values
 
 			if rows.nil?
-				return [0,0]
+				return [0,0,0]
 			end
 			if rows.length == 0 
-				return [0,0]
+				return [0,0,0]
 			end
 			row = rows[0]
 			if row[0].nil? || row[0] == ""
-				return [0,0]
+				return [0,0,0]
 			end
 	#puts "sqlBytes rows #{rows} row  #{row}" 	
 	#puts "sqlBytes row['bytes']  #{row['bytes']}" 	
