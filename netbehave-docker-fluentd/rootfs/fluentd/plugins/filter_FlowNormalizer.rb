@@ -68,6 +68,8 @@ module Fluent
 				        when "ip_protocol_version"; flow["ip_version"] = value
 				        when "host"; 				flow["host"] = value
 				        when "direction";	  		flow["direction"] = value ; flow["serviceDirection"] = value
+				        when "service"; 			flow["serviceName"] = value
+				        when "serviceName"; 		flow["serviceName"] = value				        
 				        when "protocolIdentifier"; 	flow["protocol"] = value
 				        when "protocol";	  		flow["protocol"] = value 
 #				        when "in_bytes","out_bytes";flow["bytes"] = value
