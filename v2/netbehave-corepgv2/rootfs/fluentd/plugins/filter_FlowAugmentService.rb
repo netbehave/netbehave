@@ -44,26 +44,31 @@ module Fluent
 				log.info "FlowAugmentService:configure #{@lookup_table.size} services loaded"
 			end
 			
-			 if record["flow"]["protocol_name"] == "TCP" || record["flow"]["protocol_name"] == "UDP"
-				srckey = "#{record["flow"]["src"]["port"]}/#{record["flow"]["protocol_name"].downcase}"
-				dstkey = "#{record["flow"]["dst"]["port"]}/#{record["flow"]["protocol_name"].downcase}"
+			if !record.key?("flow")
+				record
+			end
+			flow = record["flow"]
+			
+			 if flow["protocol_name"] == "TCP" || flow["protocol_name"] == "UDP"
+				srckey = "#flow["src"]["port"]}/#{flow["protocol_name"].downcase}"
+				dstkey = "#flow["dst"]["port"]}/#{flow["protocol_name"].downcase}"
 
 
-				augmentWithIpListen(record["flow"]["dst"]["ip"], record["flow"]["protocol_name"], record["flow"]["dst"]["port"], record["flow"], "dst")
-				if record["flow"]["serviceDirection"].nil?
-					augmentWithIpListen(record["flow"]["src"]["ip"], record["flow"]["protocol_name"], record["flow"]["src"]["port"], record["flow"], "src")
+				augmentWithIpListen(flow["dst"]["ip"], flow["protocol_name"], flow["dst"]["port"], flow, "dst")
+				if flow["serviceDirection"].nil?
+					augmentWithIpListen(flow["src"]["ip"], flow["protocol_name"], flow["src"]["port"], flow, "src")
 				end
 
 
-				if record["flow"]["serviceDirection"].nil?
+				if flow["serviceDirection"].nil?
 					if @lookup_table.key?(dstkey)
-						record["flow"]["serviceName"] = @lookup_table[dstkey]["serviceName"]
-						record["flow"]["serviceDescription"] = @lookup_table[dstkey]["serviceDescription"]
-						record["flow"]["serviceDirection"] = "dst"
+						flow["serviceName"] = @lookup_table[dstkey]["serviceName"]
+						flow["serviceDescription"] = @lookup_table[dstkey]["serviceDescription"]
+						flow["serviceDirection"] = "dst"
 					elsif @lookup_table.key?(srckey)
-						record["flow"]["serviceName"] = @lookup_table[srckey]["serviceName"]
-						record["flow"]["serviceDescription"] = @lookup_table[srckey]["serviceDescription"]
-						record["flow"]["serviceDirection"] = "src"
+						flow["serviceName"] = @lookup_table[srckey]["serviceName"]
+						flow["serviceDescription"] = @lookup_table[srckey]["serviceDescription"]
+						flow["serviceDirection"] = "src"
 					else
 						# No service direction
 						# Do we want to save it in unknown? 
@@ -101,7 +106,7 @@ CREATE TABLE ip_listen (
 						return
 					end
 
-					rows = @db.exec_params("SELECT service_name FROM ip_listen WHERE ip = $1 AND protocol = $2 AND port = $3", [ip, protocol, port])
+					rows = @db.exec_params("SELECT service_name, id_host_info, json_data FROM ip_listen WHERE ip = $1 AND protocol = $2 AND port = $3", [ip, protocol, port])
 					if rows.nil?
 						return 
 					end
@@ -112,6 +117,9 @@ CREATE TABLE ip_listen (
 						frecord["serviceName"] = row["service_name"]
 						# record["flow"]["serviceDescription"] = @lookup_table[dstkey]["serviceDescription"]
 						frecord["serviceDirection"] = srcdst
+						frecord[srcdst]["listen"] = {}
+						frecord[srcdst]["listen"]["id_host_info"] = row["id_host_info"]
+						frecord[srcdst]["listen"]["data"] = row["json_data"]
 						
 					end
 
