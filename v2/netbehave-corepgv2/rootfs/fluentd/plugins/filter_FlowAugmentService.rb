@@ -51,8 +51,8 @@ module Fluent
 			
 			 if flow["protocol_name"] == "TCP" || flow["protocol_name"] == "UDP"
 			 	if !flow.key?("serviceName")
-				srckey = "#flow["src"]["port"]}/#{flow["protocol_name"].downcase}"
-				dstkey = "#flow["dst"]["port"]}/#{flow["protocol_name"].downcase}"
+				srckey = "#{flow["src"]["port"]}/#{flow["protocol_name"].downcase}"
+				dstkey = "#{flow["dst"]["port"]}/#{flow["protocol_name"].downcase}"
 
 
 				augmentWithIpListen(flow["dst"]["ip"], flow["protocol_name"], flow["dst"]["port"], flow, "dst")
