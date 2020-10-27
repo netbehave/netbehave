@@ -50,6 +50,7 @@ module Fluent
 			flow = record["flow"]
 			
 			 if flow["protocol_name"] == "TCP" || flow["protocol_name"] == "UDP"
+			 	if !flow.key?("serviceName")
 				srckey = "#flow["src"]["port"]}/#{flow["protocol_name"].downcase}"
 				dstkey = "#flow["dst"]["port"]}/#{flow["protocol_name"].downcase}"
 
@@ -75,6 +76,7 @@ module Fluent
 					end
 				end
 
+			 	end # if !flow.key?("serviceName")
 			 end
 			record
 		end # def filter
