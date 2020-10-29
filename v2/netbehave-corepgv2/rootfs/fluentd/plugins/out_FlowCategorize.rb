@@ -23,9 +23,6 @@ require 'pg'
 require_relative 'pg_classes' # .rb
 require_relative 'nbacl_classes_pg' # .rb
 
-module Fluent
-  module Plugin
-  
 class FLOW_CATEGORIES < PG_ACL
 
 	def create_lookup_table_from_db()
@@ -35,6 +32,7 @@ class FLOW_CATEGORIES < PG_ACL
 	      		parse_row_db(row)
 	      	rescue => err
 	      		$log.error "FLOW_CATEGORIES:create_lookup_table_from_db() Error: #{err.to_s}"
+	      		$log.error  err.backtrace
 	      	end		
 		end
 		$log.info "FLOW_CATEGORIES:create_lookup_table_from_db::Loaded #{@nbRules} rules"
@@ -42,18 +40,7 @@ class FLOW_CATEGORIES < PG_ACL
 	
 	def parse_row_db(row)
 		aclName = row['match_key']
-		
-		fields = []
-		if !row['srcips'].nil? && row['srcips'].length > 0
-			fields.push( AclField.new("src/ip=#{row['srcips']}") )
-		end
-		fields.push( AclField.new("dst/ip=#{row['dstips']}") )
-		fields.push( AclField.new("protocol_name=#{row['protos']}") )
-		if !row['srcports'].nil? && row['srcports'].length > 0
-			fields.push( AclField.new("src/port=#{row['srcports']}") )
-		end
-		fields.push( AclField.new("dst/port=#{row['dstports']}") )
-		
+				
 		@rules[@nbRules]  = {}
 		@rules[@nbRules]["id"] = row['id']
 		@rules[@nbRules]["cat"] = row['cat']
@@ -82,8 +69,11 @@ class FLOW_CATEGORIES < PG_ACL
 		return nil
 	end
 
-end # class CombinedFlows  
+end # class FLOW_CATEGORIES  
   
+module Fluent
+  module Plugin
+
     class FlowCategorizeOutput < Fluent::Plugin::Output
     	include PgClasses # mixin used since multiple inheritance is not possible in Ruby
     	# includes: dbOpen, dbClose
@@ -134,7 +124,7 @@ end # class CombinedFlows
 					begin
 						if @rulesCategories.nil?
 							log.info "FlowCategorizeOutput::dbLoad rulesFlows #{@dbhost}/#{@dbname}"
-							@rulesFlows = FLOW_CATEGORIES.new(@dbhost, @dbname, @dbuser, @dbpass)
+							@rulesCategories = FLOW_CATEGORIES.new(@dbhost, @dbname, @dbuser, @dbpass)
 						end
 					rescue StandardError => e  
 						log.error "FlowCategorizeOutput::dbLoad error - #{e.message}"
@@ -242,7 +232,6 @@ end # class CombinedFlows
 		
 		end # 
 				
-
 
     end # class
     
