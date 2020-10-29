@@ -206,12 +206,12 @@ module Fluent
 		def insertUpdateDetail(time, rdate, flow, match_type, match_key)
 			if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)
 				id_flow_categories, cat, subcat =  match_key.split(";") 
-				srcidhost= flow["src"]["host"].nil? ? "" : flow["src"]["host"]['id_host_info']
-				dstidhost = flow["dst"]["host"].nil? ? "" : flow["dst"]["host"]['id_host_info']
+				srcidhost= flow["src"]["host"].nil? ? nil : flow["src"]["host"]['id_host_info']
+				dstidhost = flow["dst"]["host"].nil? ? nil : flow["dst"]["host"]['id_host_info']
 				jso = {}			
 				# flow_summary
 				queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, cat, subcat, id_flow_categories, srcidhost, dstidhost, jso.to_json.to_s]
-				rows = @db.exec_params("INSERT INTO flow_summary (srcip, dstip, cat, subcat, id_flow_categories,  src_id_host_info, dst_id_host_info, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING;", 
+				rows = @db.exec_params("INSERT INTO flow_summary (srcip, dstip, cat, subcat, id_flow_categories,  src_id_host_info, dst_id_host_info, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (srcip, dstip, cat, subcat) DO NOTHING;", 
 					queryParams)
 					
 				if flow["bytes"].nil? || flow["bytes"] == ""
@@ -225,7 +225,7 @@ module Fluent
 					
 				# flow_summary_daily
 				queryParams = [flow["src"]["ip"].to_s, flow["dst"]["ip"].to_s, cat, subcat, rdate, id_flow_categories, srcidhost, dstidhost, bytes_in, bytes_out, hits, jso.to_json.to_s]
-				rows = @db.exec_params("INSERT INTO flow_summary_daily (srcip, dstip, cat, subcat, datestr, id_flow_categories,  src_id_host_info, dst_id_host_info, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO UPDATE SET hits = EXCLUDED.hits + flow_summary_daily.hits, bytes_in = EXCLUDED.bytes_in + flow_summary_daily.bytes_in, bytes_out = EXCLUDED.bytes_out + flow_summary_daily.bytes_out;", queryParams)
+				rows = @db.exec_params("INSERT INTO flow_summary_daily (srcip, dstip, cat, subcat, datestr, id_flow_categories,  src_id_host_info, dst_id_host_info, bytes_in, bytes_out, hits, json_data) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (srcip, dstip, cat, subcat, datestr) DO UPDATE SET hits = EXCLUDED.hits + flow_summary_daily.hits, bytes_in = EXCLUDED.bytes_in + flow_summary_daily.bytes_in, bytes_out = EXCLUDED.bytes_out + flow_summary_daily.bytes_out;", queryParams)
 			else
 				log.error "FlowCategorizeOutput:insertUpdateDetail() Database not open"
 			end # if dbOpen
