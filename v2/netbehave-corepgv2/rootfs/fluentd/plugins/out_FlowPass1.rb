@@ -109,11 +109,18 @@ module Fluent
 					rtimestr = rtime.strftime("%Y%m%d")	# TODO: rename rtimestr to rtime_str
 					rdate = rtimestr.to_i # TODO: rename rdate to rtime_i
 					swapped = nil
+
+					if !record["flow"]["match_type"].nil?
+						return
+					end
+
 					
 					# rdate = rtimestr = 'individual' # temporary fix
 					if @yyyymmdd != rtimestr
 						setDBdate rtimestr
 					end
+					
+
 					
 					if dbOpen(@dbname, @dbuser, @dbpass, @dbhost)
 						#match_type = "unknown"
