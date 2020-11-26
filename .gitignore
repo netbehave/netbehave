@@ -1,1 +1,10 @@
 .DS_Store
+*.suo
+*.user
+_ReSharper.*
+bin
+obj
+packages
+xs
+v2/netbehave-wwwv2/netbehave-wwwv2/obj/*
+v2/netbehave-wwwv2/netbehave-wwwv2/obj
