@@ -161,15 +161,18 @@ export default {
               if (result != "") {
                   this.searchBy = value
                   this.searchValue = result
+                  this.currentPage = 1
                   this.items = this.fetchData()
               } else {
                   this.searchBy = "list"
                   this.searchValue = ""
+                  this.currentPage = 1
                   this.items = this.fetchData()
               }
           } else {
               this.searchBy = "list"
               this.searchValue = ""
+              this.currentPage = 1
               this.items = this.fetchData()
           }
       },

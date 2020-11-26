@@ -172,6 +172,21 @@ namespace netbehave_wwwv2.Controllers
                     break;
                     break;
                 */
+                case "appsourceid":
+                    if (urlQuery.SearchType == "contains")
+                    {
+                        // 
+                        // pagelist = this._context.AppInfo.Where(appinfo => appinfo.AppName.Contains(urlQuery.SearchValue, StringComparison.OrdinalIgnoreCase)); // .OrderBy(appinfo => appinfo.AppSource).OrderBy(appinfo => appinfo.AppSourceId);
+
+                        pagelist = this._context.AppInfo.Where(appinfo => appinfo.AppSourceId.ToLower().Contains(urlQuery.SearchValue.ToLower())).OrderBy(appinfo => appinfo.AppSource).OrderBy(appinfo => appinfo.AppSourceId);
+                        // pagelist = this._context.AppInfo.Where(appinfo => appinfo.AppName.IndexOf(urlQuery.SearchValue, StringComparison.OrdinalIgnoreCase) != -1); // .OrderBy(appinfo => appinfo.AppSource).OrderBy(appinfo => appinfo.AppSourceId);
+                        // 
+                    }
+                    else
+                    {
+                        pagelist = this._context.AppInfo.Where(appinfo => appinfo.AppSourceId == urlQuery.SearchValue).OrderBy(appinfo => appinfo.AppSource).OrderBy(appinfo => appinfo.AppSourceId);
+                    }
+                    break;
                 case "appname":
                 case "name":
                 default:
