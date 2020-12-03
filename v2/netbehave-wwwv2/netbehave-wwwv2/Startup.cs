@@ -46,16 +46,35 @@ namespace netbehave_wwwv2
             LogInformation("ConfigureServices()");
             services.AddControllers();
 
-            services.AddDbContext<nbv2Context>(options => options.UseNpgsql(Configuration.GetConnectionString("nbv2"))
-                //.UseLazyLoadingProxies()
-                );
 
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
+				services.AddDbContext<nbv2Context>(options => options.UseNpgsql(Configuration.GetConnectionString("nbv2"))
+					//.UseLazyLoadingProxies()
+					);
                 ConfigureServices_WindowsVisualStudio(services);
             }
             else
             {
+            	var POSTGRES_USER = Environment.GetEnvironmentVariable("POSTGRES_USER");
+                var POSTGRES_HOST = Environment.GetEnvironmentVariable("POSTGRES_HOST");
+                var POSTGRES_DB = Environment.GetEnvironmentVariable("POSTGRES_DB");
+                var POSTGRES_PASSWORD = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+
+                if (!String.IsNullOrEmpty(POSTGRES_USER) 
+                    && !String.IsNullOrEmpty(POSTGRES_HOST)
+                    && !String.IsNullOrEmpty(POSTGRES_DB)
+                    && !String.IsNullOrEmpty(POSTGRES_PASSWORD)
+                    )
+                {
+                    string connStr = "Host=" + POSTGRES_HOST + ";Database=" + POSTGRES_DB + ";Username=" + POSTGRES_USER + ";Password=" + POSTGRES_PASSWORD;
+                    services.AddDbContext<nbv2Context>(options => options.UseNpgsql(connStr));
+                }
+                else
+                {
+                    services.AddDbContext<nbv2Context>(options => options.UseNpgsql(Configuration.GetConnectionString("nbv2")));
+                }
+
                 ConfigureServices_LinuxDocker(services);
             }
 
