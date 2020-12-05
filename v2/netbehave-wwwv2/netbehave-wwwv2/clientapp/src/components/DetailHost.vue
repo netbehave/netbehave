@@ -22,8 +22,7 @@
                 </tr>
 
                 <tr v-for="(value, key) in host.jsonData" :key="key">
-                    <td></td>
-                    <td>{{key}}:</td>
+                    <td>{{key}}</td>
                     <td>{{value}}</td>
                 </tr>
 

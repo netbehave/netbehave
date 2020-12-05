@@ -34,8 +34,12 @@
                 </tr>
 
                 <tr v-for="(value, key) in app.jsonData" :key="key">
+                    <td>{{key}}:</td>
+                    <td>{{value}}</td>
+<!--
                     <td></td>
                     <td>{{key}}:{{value}}</td>
+-->
                 </tr>
             </tbody>
 
