@@ -1,35 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yves\\source\\repos\\netbehave-wwwv2\\netbehave-wwwv2\\netbehave-wwwv2.csproj": {}
+    "/Users/yves/Google Drive/dev/netbehave/github/netbehave/v2/netbehave-wwwv2/netbehave-wwwv2/netbehave-wwwv2.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yves\\source\\repos\\netbehave-wwwv2\\netbehave-wwwv2\\netbehave-wwwv2.csproj": {
+    "/Users/yves/Google Drive/dev/netbehave/github/netbehave/v2/netbehave-wwwv2/netbehave-wwwv2/netbehave-wwwv2.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yves\\source\\repos\\netbehave-wwwv2\\netbehave-wwwv2\\netbehave-wwwv2.csproj",
+        "projectUniqueName": "/Users/yves/Google Drive/dev/netbehave/github/netbehave/v2/netbehave-wwwv2/netbehave-wwwv2/netbehave-wwwv2.csproj",
         "projectName": "netbehave-wwwv2",
-        "projectPath": "C:\\Users\\yves\\source\\repos\\netbehave-wwwv2\\netbehave-wwwv2\\netbehave-wwwv2.csproj",
-        "packagesPath": "C:\\Users\\yves\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yves\\source\\repos\\netbehave-wwwv2\\netbehave-wwwv2\\obj\\",
+        "projectPath": "/Users/yves/Google Drive/dev/netbehave/github/netbehave/v2/netbehave-wwwv2/netbehave-wwwv2/netbehave-wwwv2.csproj",
+        "packagesPath": "/Users/yves/.nuget/packages/",
+        "outputPath": "/Users/yves/Google Drive/dev/netbehave/github/netbehave/v2/netbehave-wwwv2/netbehave-wwwv2/obj/",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "/usr/local/share/dotnet/sdk/NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\yves\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/yves/.config/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp3.1"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "netcoreapp3.1": {
-            "targetAlias": "netcoreapp3.1",
             "projectReferences": {}
           }
         },
@@ -41,7 +38,6 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
-          "targetAlias": "netcoreapp3.1",
           "dependencies": {
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -92,7 +88,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.300/RuntimeIdentifierGraph.json"
         }
       }
     }
